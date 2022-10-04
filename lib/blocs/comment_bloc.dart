@@ -6,22 +6,32 @@ import 'package:infinite_list/events/comment_event.dart';
 
 class CommentBloc extends Bloc<CommentEvent, CommentSate> {
   int limit = 20;
-  CommentBloc() : super(CommentStateLoading()) {
-     on<CommentFecthedEvent>((event, emit) async {
+  CommentBloc() : super(CommentStateInitial()) {
+     on<CommentFetchedEvent>((event, emit) async {
        try {
-         int offset = 0;
-         List<Comment> lstComments = <Comment>[];
-         if (state is CommentStateSuccess) {
-           offset = (state as CommentStateSuccess).lstComments.length;
-           lstComments = (state as CommentStateSuccess).lstComments;
+         bool hasReachedEndOfOnePage = (state is CommentStateSuccess && (state as CommentStateSuccess).hasReachedEnd);
+         if (event is CommentFetchedEvent && !hasReachedEndOfOnePage) {
+           if (state is CommentStateInitial) {
+             List<Comment> lstResult = await getCommentFromApi(0, limit);
+             emit(CommentStateSuccess(comments: lstResult, hasReachedEnd: false));
+           } else if (state is CommentStateSuccess) {
+             final finalIndexCurrentOfPage = (state as CommentStateSuccess).comments.length;
+             List<Comment> lstResult = await getCommentFromApi(finalIndexCurrentOfPage, limit);
+             if (lstResult.isEmpty) {
+               emit(CommentStateSuccess(comments: (state as CommentStateSuccess).comments, hasReachedEnd: true));
+             } else {
+               List<Comment> temp = <Comment>[];
+               lstResult.forEach((element) {
+                 if (!((state as CommentStateSuccess).comments + temp).contains(element)) {
+                   temp.add(element);
+                 }
+               });
+               emit(CommentStateSuccess(comments: (state as CommentStateSuccess).comments + temp, hasReachedEnd: true));
+             }
+           }
          }
-         emit(CommentStateLoading());
-         final comments = await getCommentFromApi(offset, limit);
-         lstComments.addAll(comments);
-         emit(CommentStateSuccess(lstComments: lstComments));
-       }
-       catch (e) {
-         emit(CommentStateFailure(error: e.toString()));
+       } catch (exception) {
+         emit(CommentStateFailure(error: exception.toString()));
        }
      });
   }

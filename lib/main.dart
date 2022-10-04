@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         providers: [
           BlocProvider(create: (context) {
             final commentBloc = CommentBloc();
-            commentBloc.add(CommentFecthedEvent());
+            commentBloc.add(CommentFetchedEvent());
             return commentBloc;
           },)
         ],

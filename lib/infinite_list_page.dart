@@ -14,17 +14,18 @@ class _InfiniteList extends State<InfiniteList> {
   late CommentBloc _commentBloc;
   //scroll controller
   final _scrollController = ScrollController();
-  final _scrollThreadhold = 100;
+  final _scrollThreadhold = 250;
 
   @override
   void initState() {
     // TODO: implement initState
+    super.initState();
     _commentBloc = BlocProvider.of(context);
     _scrollController.addListener(() {
       final maxScrollExtent = _scrollController.position.maxScrollExtent;
-      final currentPos = _scrollController.position.pixels;
-      if (maxScrollExtent - currentPos < _scrollThreadhold) {
-        _commentBloc.add(CommentFecthedEvent());
+      final currentScroll = _scrollController.position.pixels;
+      if(maxScrollExtent - currentScroll <= _scrollThreadhold) {
+        _commentBloc.add(CommentFetchedEvent());
       }
     });
   }
@@ -38,27 +39,37 @@ class _InfiniteList extends State<InfiniteList> {
       body: SafeArea(
         child: BlocBuilder<CommentBloc, CommentSate>(
           builder: (context, state) {
-            if (state is CommentStateLoading) {
-              return Center(
-                child: const CircularProgressIndicator(),
+            if (state is CommentStateInitial) {
+              return const Center(
+                child: CircularProgressIndicator(),
               );
-            }
-            else if (state is CommentStateFailure) {
-              return Center(
-                child: Text((state as CommentStateFailure).error),
-              );
-            }
-            else {
+            } else if (state is CommentStateFailure) {
+              return Text(state.error);
+            } else {
+              CommentStateSuccess currentState = state as CommentStateSuccess;
               return ListView.builder(
                 itemBuilder: (context, index) {
-                  Comment item = (state as CommentStateSuccess).lstComments[index];
-                  return ListTile(
-                    leading: Text(item.id.toString()),
-                    title: Text(item.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    subtitle: Text(item.body),
-                  );
+                  if (index == currentState.comments.length) {
+                    return Container(
+                      alignment: Alignment.center,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                    );
+                  } else {
+                    Comment item = currentState.comments[index];
+                    return ListTile(
+                      leading: Text(item.id.toString()),
+                      title: Text(item.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      subtitle: Text(item.body),
+                    );
+                  }
                 },
-                itemCount: (state as CommentStateSuccess).lstComments.length,
+                itemCount: currentState.hasReachedEnd ? currentState.comments.length : currentState.comments.length + 1,
                 controller: _scrollController,
               );
             }
@@ -71,6 +82,7 @@ class _InfiniteList extends State<InfiniteList> {
   @override
   void dispose() {
     // TODO: implement dispose
+    super.dispose();
     _scrollController.dispose();
   }
 }
