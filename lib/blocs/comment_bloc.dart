@@ -20,13 +20,7 @@ class CommentBloc extends Bloc<CommentEvent, CommentSate> {
              if (lstResult.isEmpty) {
                emit(CommentStateSuccess(comments: (state as CommentStateSuccess).comments, hasReachedEnd: true));
              } else {
-               List<Comment> temp = <Comment>[];
-               lstResult.forEach((element) {
-                 if (!((state as CommentStateSuccess).comments + temp).contains(element)) {
-                   temp.add(element);
-                 }
-               });
-               emit(CommentStateSuccess(comments: (state as CommentStateSuccess).comments + temp, hasReachedEnd: true));
+               emit(CommentStateSuccess(comments: (state as CommentStateSuccess).comments + lstResult, hasReachedEnd: false));
              }
            }
          }

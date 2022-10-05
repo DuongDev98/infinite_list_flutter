@@ -14,7 +14,7 @@ class _InfiniteList extends State<InfiniteList> {
   late CommentBloc _commentBloc;
   //scroll controller
   final _scrollController = ScrollController();
-  final _scrollThreadhold = 250;
+  final _scrollThreadhold = 0;
 
   @override
   void initState() {
